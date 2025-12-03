@@ -37,6 +37,9 @@ spring:
       properties:
         spring.json.value.default.type: asw.bettermusic.album.api.events.AlbumCreatedEvent
         spring.json.trusted.packages: asw.bettermusic.*
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server: 
   port: ${PORT:${SERVER_PORT:0}}

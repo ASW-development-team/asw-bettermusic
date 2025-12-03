@@ -2,6 +2,9 @@ package asw.bettermusic.connessioni.domain;
 
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import asw.bettermusic.connessioni.api.events.ConnessioniCreatedEvent;
+import asw.bettermusic.connessioni.api.events.ConnessioniDeletedEvent;
+import asw.bettermusic.connessioni.api.events.ConnessioniEvent;
 
 import java.util.*; 
 
@@ -11,11 +14,16 @@ public class ConnessioniServiceImpl implements ConnessioniService {
 	@Autowired
 	private ConnessioniRepository connessioniRepository;
 
+	@Autowired
+	private ConnessioniEventPublisher connessioniEventPublisher;
+
 	/* Crea una nuova connessione, dati utente, seguito e ruolo. */ 
  	public Connessione createConnessione(String utente, String seguito, String ruolo) {
 		Connessione connessione = new Connessione(utente, seguito, ruolo); 
 		try {
 			connessione = connessioniRepository.save(connessione);
+			ConnessioniEvent event = new ConnessioniCreatedEvent(connessione.getId(), connessione.getUtente(), connessione.getSeguito(), connessione.getRuolo());
+			connessioniEventPublisher.publishConnessioniEvent(event);
 			return connessione;
 		} catch(Exception e) {
 			/* si potrebbe verificare un'eccezione se è violato il vincolo di unicità della connessione */ 
@@ -64,6 +72,8 @@ public class ConnessioniServiceImpl implements ConnessioniService {
 		Connessione connessione = getConnessione(utente, seguito, ruolo); 
 		if (connessione!=null) {
 			connessioniRepository.delete(connessione);
+			ConnessioniEvent event = new ConnessioniDeletedEvent(connessione.getId(), connessione.getUtente(), connessione.getSeguito(), connessione.getRuolo());
+			connessioniEventPublisher.publishConnessioniEvent(event);
 		}
 		return connessione; 
 	}

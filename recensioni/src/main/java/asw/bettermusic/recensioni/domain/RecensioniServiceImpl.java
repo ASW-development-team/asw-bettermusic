@@ -2,7 +2,7 @@ package asw.bettermusic.recensioni.domain;
 
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import asw.bettermusic.recensioni.api.events.RecensioniCreatedEvent;
 import java.util.*; 
 
 @Service
@@ -14,13 +14,23 @@ public class RecensioniServiceImpl implements RecensioniService {
 	@Autowired
 	private AlbumRepository albumRepository;
 
+	@Autowired
+	private RecensioniEventPublisher recensioniEventPublisher;
+
 	/* Crea una nuova recensione, a partire dai suoi dati, usando solo il DB locale. */ 
  	public Recensione createRecensione(String recensore, String titoloAlbum, String artistaAlbum, String testo, String sunto) {
 		Album album = albumRepository.findByTitoloAndArtista(titoloAlbum, artistaAlbum)
 			.orElseThrow(() -> new IllegalArgumentException("Album not found: " + titoloAlbum + " - " + artistaAlbum));
 		Recensione recensione = new Recensione(recensore, album.getId(),  testo, sunto); 
-		recensione = recensioniRepository.save(recensione);
-		return recensione;
+		try {
+			recensione = recensioniRepository.save(recensione);
+			RecensioniCreatedEvent event = new RecensioniCreatedEvent(recensione.getId(), recensione.getRecensore(), recensione.getIdAlbum(), recensione.getSunto());
+			recensioniEventPublisher.publishRecensioniCreated(event);
+			return recensione;
+		} catch(Exception e) {
+			/* si potrebbe verificare un'eccezione se è violato il vincolo di unicità dell'album */ 
+			return null; 
+		}
 	}
 
 	/* Trova una recensione, dato l'id. */ 
