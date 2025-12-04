@@ -2,12 +2,13 @@ package asw.bettermusic.recensioni.eventsconsumer;
 
 import asw.bettermusic.album.api.events.AlbumCreatedEvent;
 import asw.bettermusic.recensioni.domain.*;
-import org.springframework.stereotype.Service;
+
+import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import asw.bettermusic.album.api.events.AlbumServiceEventChannel;
 
-@Service
+@Component
 public class AlbumEventsConsumer {
 
   @Autowired
