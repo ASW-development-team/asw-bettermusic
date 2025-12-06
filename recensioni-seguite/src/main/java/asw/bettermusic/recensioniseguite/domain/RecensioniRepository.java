@@ -13,5 +13,9 @@ public interface RecensioniRepository extends CrudRepository<Recensione, Long> {
 
 	Collection<Recensione> findByIdAlbum(Long idAlbum);
 
+	Collection<Recensione> findByIdAlbumIn(Collection<Long> idAlbum);
+
+	Collection<Recensione> findByRecensoreIn(Collection<String> recensori);
+
 }
 
