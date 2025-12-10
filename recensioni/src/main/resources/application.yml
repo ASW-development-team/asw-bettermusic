@@ -4,7 +4,7 @@ spring:
   application: 
     name: recensioni
   datasource:
-    url: jdbc:postgresql://localhost:5434/recensionidb
+    url: jdbc:postgresql://recensioni-db:5432/recensionidb
     username: recensioni
     password: recensioni
     driver-class-name: org.postgresql.Driver
@@ -15,7 +15,7 @@ spring:
       hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
   cloud:
     consul:
-      host: localhost
+      host: consul
       port: 8500
       discovery: 
         instanceId: ${spring.application.name}-${spring.cloud.client.hostname}-${random.value}
@@ -29,7 +29,7 @@ spring:
     loadbalancer: 
       ribbon.enabled: false 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     consumer:
       group-id: recensioni
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -42,8 +42,8 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server: 
-  port: ${PORT:${SERVER_PORT:0}}
-#  port: 8080
+#  port: ${PORT:${SERVER_PORT:0}}
+  port: 8080
   # per swagger, se dietro a un api gateway 
   forward-headers-strategy: framework
 

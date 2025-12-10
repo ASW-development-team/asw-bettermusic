@@ -4,7 +4,7 @@ spring:
   application: 
     name: recensioni-seguite
   datasource:
-    url: jdbc:postgresql://localhost:5436/recseguitedb
+    url: jdbc:postgresql://recensioni-seguite-db:5432/recseguitedb
     username: recseg
     password: recseg
     driver-class-name: org.postgresql.Driver
@@ -14,7 +14,7 @@ spring:
     properties:
       hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     consumer:
       group-id: recensioni-seguite
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -23,7 +23,7 @@ spring:
         spring.json.trusted.packages: asw.bettermusic.*
   cloud:
     consul:
-      host: localhost
+      host: consul
       port: 8500
       discovery: 
         instanceId: ${spring.application.name}-${spring.cloud.client.hostname}-${random.value}
@@ -38,8 +38,8 @@ spring:
       ribbon.enabled: false 
 
 server: 
-  port: ${PORT:${SERVER_PORT:0}}
-#  port: 8080
+#  port: ${PORT:${SERVER_PORT:0}}
+  port: 8080
   # per swagger, se dietro a un api gateway 
   forward-headers-strategy: framework
 

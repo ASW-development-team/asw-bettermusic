@@ -1,10 +1,7 @@
 #!/bin/bash
 
-echo Halting BETTERMUSIC
+echo Halting BetterMusic services
 
-pkill -f 'recensioni-seguite.jar'
-pkill -f 'recensioni.jar'
-pkill -f 'connessioni.jar'
-pkill -f 'album.jar'
-pkill -f 'api-gateway.jar'
+docker compose down -v
 
+echo BetterMusic services halted
