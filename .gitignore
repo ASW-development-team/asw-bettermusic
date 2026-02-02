@@ -1,8 +1,9 @@
 .gradle
 /build/
+/bin/
 !gradle/wrapper/gradle-wrapper.jar
 
-log_modifiche.log
+log_modifiche.md
 
 ### STS ###
 .apt_generated
@@ -25,5 +26,3 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
-
-kafka/
