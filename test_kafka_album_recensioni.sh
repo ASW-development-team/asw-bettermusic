@@ -15,7 +15,7 @@ fi
 echo "ID album: $ALBUM_ID"
 
 echo "[2/5] Attesa breve per propagazione evento Kafka"
-sleep 1
+sleep 3
 
 echo "[3/5] POST recensione via API Gateway"
 REC_JSON=$(curl -s -X POST http://localhost:8080/recensioni/recensioni \

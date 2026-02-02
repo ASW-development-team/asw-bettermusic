@@ -3,6 +3,7 @@
 !gradle/wrapper/gradle-wrapper.jar
 kafka
 build
+bin
 
 ### STS ###
 .apt_generated
@@ -21,6 +22,7 @@ build
 ### NetBeans ###
 nbproject/private/
 build/
+bin/
 nbbuild/
 dist/
 nbdist/

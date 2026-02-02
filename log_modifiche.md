@@ -1,97 +1,15 @@
-# Migrazione Database a PostgreSQL
+# Modifiche da effettuare
 
-## build.gradle
-- album: sostituito `org.hsqldb:hsqldb` con `org.postgresql:postgresql`
-- recensioni: sostituito `org.hsqldb:hsqldb` con `org.postgresql:postgresql`
-- connessioni: sostituito `org.hsqldb:hsqldb` con `org.postgresql:postgresql`
-- recensioni-seguite: sostituito `org.hsqldb:hsqldb` con `org.postgresql:postgresql`
+- verificare il corretto funzionamento di kafka per le varie istanze di ciascun servizio, quindi verifiare come vengono assegnate le partizioni alle varie istanze (comando per capire quale consumer riceve un determinato evento);
 
-## application.yml
-- album: aggiunti `spring.datasource` (jdbc:postgresql://localhost:5433/albumdb) e `spring.jpa` (ddl-auto=update, dialect PostgreSQL)
-- recensioni: aggiunti `spring.datasource` (jdbc:postgresql://localhost:5434/recensionidb) e `spring.jpa`
-- connessioni: aggiunti `spring.datasource` (jdbc:postgresql://localhost:5435/connessionidb) e `spring.jpa`
-- recensioni-seguite: aggiunti `spring.datasource` (jdbc:postgresql://localhost:5436/recseguitedb) e `spring.jpa`
+- inserire la replicazione dei topic (vedi slide), e creare i topic non in maniera automatica (vedere se è giusto anno scorso);
 
-## docker-compose.yml
-- aggiunti i servizi:
-  - album-db (porta 5433, db=albumdb, user=album)
-  - recensioni-db (porta 5434, db=recensionidb, user=recensioni)
-  - connessioni-db (porta 5435, db=connessionidb, user=connessioni)
-  - recensioni-seguite-db (porta 5436, db=recseguitedb, user=recseg)
+- mettere nel docker-compose health check, verificare la correttezza nella replicazione dell'api-gateway e creare i topic eventualmente con un'ulteriore container docker init-kafka;
 
-# Integrazione Kafka per AlbumCreatedEvent
+- rimuovere gli script windows e soprattutto verificare i comandi da shell per creare diversi script per lo start e lo stop del software;
 
-## album/build.gradle
-- aggiunta `org.springframework.kafka:spring-kafka`
-- perché: abilitare il producer Kafka per pubblicare `AlbumCreatedEvent`.
+- verificare sulla consegna, ma in caso creare degli script che permettono di verificare il corretto funzionamento delle modifiche effettuate;
 
-## album/src/main/resources/application.yml
-- aggiunta sezione `spring.kafka.producer` con serializer JSON
-- perché: serializzare correttamente eventi `AlbumCreatedEvent` e inviare a Kafka.
+- inserire nel .gitignore il file in questione per non caricarlo su github;
 
-## album/src/main/java/asw/bettermusic/album/domain/AlbumServiceImpl.java
-- autowire `AlbumEventPublisher` e pubblicazione evento dopo `save`
-- perché: notificare la creazione di un album ai consumatori senza dipendenze sincrone.
-
-## album/src/main/java/asw/bettermusic/album/domain/AlbumEventPublisher.java (nuovo file)
-- porta outbound per la pubblicazione di eventi nel topic `album-event-service`
-- perché: adapter infrastrutturale esterno al dominio per messaging deve implementare questa porta e AlbumServiceImpl fa autowiring della porta.
-
-## album/src/main/java/asw/bettermusic/album/eventpublisher/AlbumEventKafkaPublisher.java (nuovo file)
-- adapter esterno che implementa la porta AlbumEventPublisher del domani ed effettua il kafkatemplate.send() dell'evento AlbumCreatedEvent nel topic specificato
-- perché: adapter infrastrutturale esterno al dominio per messaging
-
-## album-api/src/main/java/asw/bettermusic/album/api/events/AlbumCreatedEvent.java (nuovo file)
-- DTO evento con id, titolo, artista, generi
-- perché: contratto condiviso tra producer e consumer.
-
-## album-api/src/main/java/asw/bettermusic/album/api/events/AlbumServiceEventChannel.java (nuovo file)
-- classe che definisce il nome del topic `album-event-service` per la comunicazione asincrona
-- perché: contratto condiviso tra producer e consumer.
-
-## recensioni/build.gradle
-- aggiunta `org.springframework.kafka:spring-kafka`
-- perché: abilitare il consumer Kafka per ricevere `AlbumCreatedEvent`.
-
-## recensioni/src/main/resources/application.yml
-- aggiunta sezione `spring.kafka.consumer` (group-id, deserializer JSON, trusted packages)
-- perché: deserializzare eventi e consumarli dal topic.
-
-## recensioni/src/main/java/asw/bettermusic/recensioni/RecensioniApplication.java
-- aggiunto `@EnableKafka`
-- perché: abilitare l'elaborazione di `@KafkaListener` nel servizio recensioni.
-
-## recensioni/src/main/java/asw/bettermusic/recensioni/domain/Album.java
-- trasformato in entity JPA con `@Entity` e `@ElementCollection` per generi
-- perché: mantenere gli album localmente nel DB di `recensioni`.
-
-## recensioni/src/main/java/asw/bettermusic/recensioni/domain/AlbumRepository.java (nuovo file)
-- repository JPA per album
-- perché: porta di persistenza locale conforme all’architettura esagonale.
-
-## recensioni/src/main/java/asw/bettermusic/recensioni/eventsconsumer/AlbumEventsConsumer.java (nuovo file)
-- `@KafkaListener` su topic `album-event-service` che invoca il servizio del domain per l'elaborazione dell'evento
-- perché: aggiornare il DB locale di `recensioni` sugli eventi.
-
-## recensioni/src/main/java/asw/bettermusic/recensioni/domain/RecensioniEventListener.java (nuovo file)
-- `@Service` invocato dll'adattatore esterno che effettua il salvataggio nel db del nuovo album creato con AlbumRepository
-- perché: aggiornare il DB locale di `recensioni` sugli eventi.
-
-## recensioni/src/main/java/asw/bettermusic/recensioni/domain/RecensioniServiceImpl.java
-- rimosso uso di `AlbumClientPort` in creazione; usato `AlbumRepository.findByTitoloAndArtista`
-- aggiunto controllo su album mancante con `IllegalArgumentException`
-- perché: evitare invocazioni remote nella creazione recensione; maggiore disponibilità e performance.
-- nota: gli adapter remoti restano nel codice ma non sono più iniettati né utilizzati
-
-# Test End-to-End via API Gateway
-- Avvio: `docker compose up -d consul kafka album-db recensioni-db`; avvia servizi `album` e `recensioni`
-- Creazione album (Gateway): `curl -X POST http://localhost:8080/album/album -H 'Content-Type: application/json' -d '{"titolo":"OK Computer","artista":"Radiohead","generi":["rock","alternative"]}'`
-- Verifica evento: consumer CLI su `album-event-service` (Bitnami) `PATH=/opt/bitnami/kafka/bin:$PATH; kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic album-event-service --from-beginning --max-messages 1`
-- Creazione recensione (Gateway): `curl -X POST http://localhost:8080/recensioni/recensioni -H 'Content-Type: application/json' -d '{"recensore":"fra","titoloAlbum":"OK Computer","artistaAlbum":"Radiohead","testo":"Ottimo","sunto":"Top"}'`
-- Verifica: `curl -s http://localhost:8080/recensioni/recensioni | jq`
-- Script dedicato: aggiunto `test_kafka_album_recensioni.sh` per automatizzare la sequenza
-
-## Comandi utili per testare kafka
-- docker exec -it NOME_CONTAINER bash (entrare nella shell del container)
-- kafka-topics.sh --bootstrap-server kafka:9092 --list (verificare la lista di topic creati)
-- kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic album-service-events --from-beginning (verificare la lista di messaggi inviati in un determinato topic)
+- capire come fare la fork per caricare asw-bettermusic-kubernetes

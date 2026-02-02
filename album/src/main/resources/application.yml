@@ -35,7 +35,7 @@ spring:
       ribbon.enabled: false 
 
 server: 
-# port: ${PORT:${SERVER_PORT:0}}
+#  port: ${PORT:${SERVER_PORT:0}}
   port: 8080
   # per swagger, se dietro a un api gateway 
   forward-headers-strategy: framework
