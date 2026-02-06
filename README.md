@@ -3,18 +3,41 @@
 Progetto del corso di Analisi e progettazione del software per l'anno accademico 2025-2026. 
 
 
-## Descrizione di questo progetto 
+## Descrizione del progetto
 
-Questo progetto contiene il il codice di *BetterMusic*, 
-un semplice social network per la condivisione di recensioni di album musicali.  
-Gli utenti del sistema possono scrivere e pubblicare delle recensioni. 
-Possono poi seguire le recensioni scritte da specifici recensori e quelle degli album realizzati da specifici artisti oppure di specifici generi.  
-Quando un utente accede alla pagina delle recensioni che segue, gli vengono mostrate le recensioni dei recensori e degli artisti e dei generi che segue. 
+Questo progetto contiene il il codice di ***BetterMusic***, un semplice social network per la condivisione di recensioni di album musicali.  
+Gli utenti del sistema possono scrivere e pubblicare delle recensioni, possono poi seguire le recensioni scritte da specifici recensori e quelle degli album realizzati da specifici artisti oppure di specifici generi.  
+Quando un utente accede alla pagina delle recensioni che segue, gli vengono mostrate le recensioni dei recensori e degli artisti e dei generi che segue.
 
-L'applicazione *BetterMusic* è composta dai seguenti microservizi: 
 
-* Il servizio *album* gestisce gli album musical. 
-  Ogni album ha un titolo ed è stato realizzato da un artista, e può essere relativo a uno o più generi musicali. 
+## Tecnologie utilizzate
+Il progetto sfrutta un ecosistema di tecnologie moderne per garantire la natura distribuita e resiliente dell'applicazione.
+
+### Core Framework & Language
+* **Java** & **Spring Boot**: Framework principale utilizzato per lo sviluppo della logica di business e degli adattatori dei microservizi.
+* **Gradle**: Strumento di build automation utilizzato per la gestione delle dipendenze e la compilazione del progetto.
+
+### Comunicazione & Messaggistica
+* **Apache Kafka**: Message broker utilizzato per l'implementazione del pattern Event-Driven. Gestisce la notifica asincrona di eventi.
+
+### Persistenza dei dati
+* **PostgreSQL**: Ogni microservizio (album, recensioni, connessioni, recensioni-seguite) utilizza la propria istanza di database relazionale per garantire l'isolamento dei dati.
+* **Spring Data JPA**: Utilizzato per l'interazione con le basi di dati attraverso il pattern Repository all'interno degli adattatori di uscita.
+
+### Infrastruttura & Deployment
+* **Docker** & **Docker Compose**: Utilizzati per la containerizzazione dei singoli servizi e dell'infrastruttura (database e broker Kafka).
+* **API Gateway**: Punto di ingresso unico (porta 8080) che espone i path dei vari microservizi all'esterno.
+
+
+## Architettura e Microservizi
+L'applicazione *BetterMusic* segue un'architettura a **microservizi** basata sul **pattern Event-Driven**.
+La comunicazione principale avviene tramite un **broker Apache Kafka**, rendendo il sistema resiliente ed asincrono.\
+Ogni modulo rispetta i principi dell'**Architettura Esagonale** ed è internamente strutturato per isolare la logica di business (contenuta nel Package `domain`) dagli adattatori infrastrutturali.
+
+I **microservizi principali** sono:
+
+* Il **servizio *album*** gestisce gli album musicali. 
+  Ogni album ha un titolo ed è stato realizzato da un artista, e può essere relativo ad uno o più generi musicali. 
   
   Un esempio di album: 
   * id: 1
@@ -26,14 +49,14 @@ L'applicazione *BetterMusic* è composta dai seguenti microservizi:
   Anche titolo ed artista identificano univocamente gli album. 
   
   Operazioni: 
-  * `POST /album` aggiunge un nuovo album (dati titolo, artista e una lista di generi)
-  * `GET /album/{id}` trova un album, dato l'id 
-  * `GET /album` trova tutti gli album
-  * `GET /cercaalbum?titolo={titolo}&artista={artista}` trova un album, dati titolo e artista
-  * `GET /cercaalbum/artista/{artista}` trova tutti gli album di un certo artista
-  * `GET /cercaalbum/genere/{genere}` trova tutti gli album di un certo genere
+  * `POST /album` $\to$ aggiunge un nuovo album (dati titolo, artista e una lista di generi)
+  * `GET /album/{id}` $\to$ trova un album, dato l'id 
+  * `GET /album` $\to$ trova tutti gli album
+  * `GET /cercaalbum?titolo={titolo}&artista={artista}` $\to$ trova un album, dati titolo e artista
+  * `GET /cercaalbum/artista/{artista}` $\to$ trova tutti gli album di un certo artista
+  * `GET /cercaalbum/genere/{genere}` $\to$ trova tutti gli album di un certo genere
   
-* Il servizio *recensioni* gestisce le recensioni. 
+* Il **servizio *recensioni*** gestisce le recensioni. 
   Ogni recensione è scritta da un recensore, si riferisce ad un album (tramite il suo id),
   e contiene il testo della recensione (che può essere molto lungo) ed un suo sunto (di solito breve). 
   
@@ -48,127 +71,118 @@ L'applicazione *BetterMusic* è composta dai seguenti microservizi:
   Per motivi di prestazioni, le operazioni che restituiscono più recensioni, le restituiscono in formato breve. 
   
   Operazioni: 
-  * `POST /recensioni` aggiunge una nuova recensione (dati recensore, titolo dell'album, artista dell'album, testo e sunto della recensione)
-  * `GET /recensioni/{id}` trova una recensione, dato l'id (la recensione contiene il testo completo della recensione) 
-  * `GET /recensioni` trova tutte le recensioni (in formato breve) 
-  * `GET /cercarecensioni/album/{idAlbum}` trova tutte le recensioni (in formato breve) di un certo album, dato il suo id
-  * `GET /cercarecensioni/recensore/{recensore}` trova tutte le recensioni (in formato breve) di un certo recensore
+  * `POST /recensioni` $\to$ aggiunge una nuova recensione (dati recensore, titolo dell'album, artista dell'album, testo e sunto della recensione)
+  * `GET /recensioni/{id}` $\to$ trova una recensione, dato l'id (la recensione contiene il testo completo della recensione) 
+  * `GET /recensioni` $\to$ trova tutte le recensioni (in formato breve) 
+  * `GET /cercarecensioni/album/{idAlbum}` $\to$ trova tutte le recensioni (in formato breve) di un certo album, dato il suo id
+  * `GET /cercarecensioni/recensore/{recensore}` $\to$ trova tutte le recensioni (in formato breve) di un certo recensore
+
+  Le recensioni vengono validate consultando una base di dati locale degli album, mantenuta aggiornata tramite la sottoscrizione agli eventi di creazione album su Kafka.
   
-* Il servizio *connessioni* gestisce le connessioni degli utenti con le recensioni che seguono, 
+* Il **servizio *connessioni*** gestisce le connessioni degli utenti con le recensioni che seguono, 
   e più precisamente con gli artisti, con i recensori e con i generi musicali che essi seguono. 
 
   Le connessioni sono delle terne *utente-seguito-ruolo*, 
-  in cui l'*utente* è chi segue, 
-  *seguito* è chi o che cosa è seguito (un artista oppure uno che scrive recensioni oppure un genere musicale) 
-  e *ruolo* rappresenta il ruolo del seguito, e può essere *ARTISTA* oppure *RECENSORE* oppure *GENERE*. 
-  Per esempio, la terna *Alice-Pink Floyd-ARTISTA* indica che *Alice* è interessata a seguire le recensioni degli album dei *Pink Floyd*. 
-  Invece, la terna *Bob-OndaRock-RECENSORE* indica che *Bob* è interessato a seguire le recensioni scritte da *OndaRock*. 
-  Inoltre, la terna *Carlo-Pop-GENERE* indica che *Carlo* è interessato a seguire le recensioni sugli album del genere *Pop*. 
-
-  Operazioni: 
-  * `POST /connessioni` aggiunge una nuova connessione utente-seguito-ruolo (dati utente, seguito e ruolo)
-  * `GET /connessioni` trova tutte le connessioni 
-  * `GET /connessioni/{utente}` trova tutte le connessioni di un certo utente
-  * `GET /connessioni/{utente}/{ruolo}` trova tutte le connessioni di un certo utente relative a un certo ruolo
-  * `DELETE /connessioni` cancella una connessione utente-seguito-ruolo (dati utente, seguito e ruolo)
-
-* Il servizio *recensioni-seguite* consente a un utente di trovare le recensioni degli artisti e dei recensori e dei generi musicali che segue. 
-
-  Operazioni: 
-  * `GET /recensioniseguite/{utente}` trova tutti le recensioni seguite da un certo utente, 
-    ovvero le recensioni di artisti di album e di recensori e di generi musicali seguiti da quell'utente
-	(le recensioni sono in formato breve) 
+  in cui:
+  * l'*utente* è chi segue, 
+  * *seguito* è chi o che cosa è seguito (un artista oppure uno che scrive recensioni oppure un genere musicale),
+  * *ruolo* rappresenta il ruolo del seguito e può essere *ARTISTA*, *RECENSORE* oppure *GENERE*. 
   
-* Il servizio *api-gateway* (esposto sulla porta *8080*) è l'API gateway dell'applicazione che: 
+  Per esempio, la terna *Alice-Pink Floyd-ARTISTA* indica che *Alice* è interessata a seguire le recensioni degli album dei *Pink Floyd*.\
+  Invece, la terna *Bob-OndaRock-RECENSORE* indica che *Bob* è interessato a seguire le recensioni scritte da *OndaRock*.\
+  Infine, la terna *Carlo-Pop-GENERE* indica che *Carlo* è interessato a seguire le recensioni sugli album del genere *Pop*. 
+
+  Operazioni: 
+  * `POST /connessioni` $\to$ aggiunge una nuova connessione utente-seguito-ruolo (dati utente, seguito e ruolo)
+  * `GET /connessioni` $\to$ trova tutte le connessioni 
+  * `GET /connessioni/{utente}` $\to$ trova tutte le connessioni di un certo utente
+  * `GET /connessioni/{utente}/{ruolo}` $\to$ trova tutte le connessioni di un certo utente relative a un certo ruolo
+  * `DELETE /connessioni` $\to$ cancella una connessione utente-seguito-ruolo (dati utente, seguito e ruolo)
+
+* Il **servizio *recensioni-seguite*** consente ad un utente di trovare le recensioni degli artisti, dei recensori e dei generi musicali che segue. 
+
+  Operazioni: 
+  * `GET /recensioniseguite/{utente}` $\to$ trova tutti le recensioni seguite da un certo utente, 
+    ovvero le recensioni di artisti di album e di recensori e di generi musicali seguiti da quell'utente
+	(le recensioni sono in formato breve)
+
+  Agisce come un query-model (pattern CQRS), aggregando in tempo reale gli eventi provenienti dai servizi album, recensioni e connessioni per fornire risposte immediate senza interdipendenze sincrone.
+  
+* Il **servizio *api-gateway*** (esposto sulla porta *8080*) è l'API gateway dell'applicazione che: 
   * espone il servizio *album* sul path `/album` - ad esempio, `GET /album/album/{id}`
   * espone il servizio *recensioni* sul path `/recensioni` - ad esempio, `GET /recensioni/recensioni`
   * espone il servizio *connessioni* sul path `/connessioni` - ad esempio, `GET /connessioni/connessioni/{utente}`
   * espone il servizio *recensioni-seguite* sul path `/recensioni-seguite` - ad esempio, `GET /recensioni-seguite/recensioniseguite/{utente}`
 
+### Topic Kafka
+Per garantire il disaccoppiamento e la resilienza del sistema, sono stati definiti i seguenti topic su cui viaggiano gli **eventi di dominio**:
 
-## Esecuzione 
+1. **Topic `album`**
+  * **Producer**: Servizio *album*
+  * **Consumer**: Servizi *recensioni* e *recensioni-seguite*
+  * **Evento**: `AlbumCreatedEvent`, emesso e notificato ogni volta che un nuovo album viene registrato nel sistema (contiene tutti i dati dell'album)
 
-Per eseguire questo progetto: 
+2. **Topic `recensioni`**
+  * **Producer**: Servizio *recensioni*
+  * **Consumer**: Servizio *recensioni-seguite*
+  * **Evento**: `RecensioneCreatedEvent`, emesso e notificato ogni volta che una nuova recensione viene registrata nel sistema (contiene i dati della recensione in formato breve)
 
-* per avviare *Consul*, eseguire lo script `start-consul.sh` 
+3. **Topic `connessioni`**
+  * **Producer**: Servizio *connessioni*
+  * **Consumer**: Servizio *recensioni-seguite*
+  * **Eventi**: `ConnessioneCreatedEvent` e `ConnessioneDeletedEvent`, emesso e notificato ogni volta che una nuova connessione utente-seguito-ruolo viene creata o cancellata
 
-* per avviare l'applicazione *BetterMusic* (che richiede *Consul*), eseguire lo script `start-bettermusic.sh` 
+### Struttura del Progetto
+Il progetto è organizzato come un **sistema multi-modulo** Gradle.\
+Ogni componente logico è suddiviso in due moduli distinti per gestire correttamente le dipendenze e i contratti di interfaccia.
 
-* per inizializzare le basi di dati con dei dati di esempio, 
-  eseguire gli script `do-init-albums.sh`, `do-init-recensioni.sh` e `do-init-connessioni.sh` 
-  (oppure, in modo equivalente, lo script `do-init-bettermusic-db.sh`)
+#### Pattern dei Moduli
+Ogni microservizio è composto da due **moduli distinti**:
+* **Modulo di Implementazione** `<service>` (es. `album`, `recensioni`) $\to$ contiene l'intera applicazione Spring Boot, la logica di business, l'accesso al database e la configurazione di Kafka. **Non è condiviso** con gli altri servizi.
+* **Modulo di Interfaccia** `<service>-api` (es. `album-api`, `recensioni-api`) $\to$ è una **libreria leggera condivisa tra i microservizi** che permette agli altri servizi di conoscere la struttura dei dati senza dipendere dall'implementazione. Definisce i **Contratti**: le classi degli Eventi e gli oggetti per le chiamate REST.
 
-Sono anche forniti alcuni script di esempio: 
+#### Organizzazione Interna
+All'interno del modulo di implementazione, tutti i microservizi rispettano rigorosamente la **divisione in package** prevista dall'Architettura Esagonale:
+* **`domain`** $\to$ contiene le Entità, la logica di business e le Porte (interfacce). È isolato da qualsiasi tecnologia esterna.
+* **`rest`** (Inbound Adapter) $\to$ gestisce l'esposizione delle API REST verso l'esterno.
+* **`eventpublisher`** (Outbound Adapter) $\to$ implementa la pubblicazione fisica degli messaggi sul broker Kafka.
+* **`eventsconsumer`** (Inbound Adapter - ove presente) $\to$ gestisce la ricezione e l'elaborazione degli eventi in arrivo dai topic Kafka.
 
-* lo script `run-sample-queries.sh` esegue un insieme di interrogazioni di esempio mediante *curl*
+## Esecuzione
+L'**applicazione** è **progettata per essere eseguita in un ambiente a container**.\
+Ogni microservizio ed ogni componente dell'infrastruttura (PostgreSQL, Kafka) gira in un container separato.
 
-* lo script `do-get-albums.sh` trova tutti gli album 
+### Compilazione
+Prima di avviare i servizi, compilare il progetto con Gradle per generare i file eseguibili:
+  
+```bash
+./gradlew clean build
+```
 
-* lo script `do-get-album-per-id.sh` trova un album dato l'id
+### Avvio con Docker Compose
+Per avviare l'intera infrastruttura insieme ai microservizi:
+```bash
+docker-compose up -d
+```
 
-* lo script `do-get-album-per-titolo-e-artista.sh` trova un album dati titolo e artista
+Come richiesto dai requisiti di progetto, **è possibile scalare i servizi** mandando in esecuzione più istanze per ciascuno (es. 2 istanze per ognuno):
+```bash
+docker-compose up -d --scale album=2 --scale recensioni=2 --scale connessioni=2 --scale recensioni-seguite=2
+```
 
-* lo script `do-get-albums-per-artista.sh` trova tutti gli album di un certo artista
+### Inizializzazione e Test
+Sono forniti degli script per automatizzare il caricamento dei dati e la verifica del sistema:
+* **Inizializzazione** $\to$ `./do-init-bettermusic-db.sh` carica i dati di esempio iniziali.
+* **Verifica Aggiornamenti** $\to$ gli script `do-update-albums.sh`, `do-update-recensioni.sh` e `do-update-connessioni.sh` simulano nuovi inserimenti e verificano che i servizi asincroni aggiornino correttamente le proprie basi di dati tramite Kafka.
+* **Esecuzione Query** $\to$ `./run-sample-queries.sh` esegue le interrogazioni di test tramite l'API Gateway sulla porta 8080.
 
-* lo script `do-get-albums-per-genere.sh` trova tutti gli album di un certo genere
+#### Utility e Debug
+Per un controllo più granulare del sistema, sono disponibili ulteriori script:
+* **Ispezione Dati** $\to$ gli script `do-get-...` (es. `./do-get-albums.sh`) permettono di consultare lo stato locale di ogni servizio.
+* **Monitoraggio Kafka** $\to$ gli script `test_kafka_...` consentono di ispezionare i messaggi in transito sui topic Kafka per verificare la corretta comunicazione asincrona.
 
-* lo script `do-get-recensioni.sh` trova tutte le recensioni 
-
-* lo script `do-get-recensioni-per-id-album.sh` trova tutte le recensioni relative a un certo album 
-
-* lo script `do-get-recensioni-per-recensore.sh` trova tutte le recensioni di un certo recensore 
-
-* lo script `do-get-connessioni.sh` trova tutte le connessioni 
-
-* lo script `do-get-connessioni-per-utente.sh` trova tutte le connessioni di un certo utente
-
-* lo script `do-get-recensioni-seguite-per-utente.sh` trova tutte le recensioni seguite da un certo utente 
-
-* lo script `do-get-recensioni-seguite.sh` trova le recensioni seguite dagli utenti Alice, Bob e Carlo
-
-Inoltre: 
-
-* gli script `do-update-albums.sh`, `do-update-recensioni.sh` e `do-update-connessioni.sh` 
-  (oppure, in modo equivalente, lo script `do-update-bettermusic-db.sh`)
-  eseguono degli aggiornamenti delle varie basi di dati, 
-  utili per verificare la correttezza dell'applicazione  
-
-Alla fine, l'applicazione può essere arrestata usando lo script `stop-bettermusic.sh`. 
-*Consul* può essere arrestato usando lo script `stop-consul.sh`. 
-
-
-## Test minimale 
-
-Con riferimento agli script forniti: 
-
-* eseguire lo script `do-init-bettermusic-db.sh`  
-
-* eseguire lo script `run-sample-queries.sh`: 
-  le recensioni seguite da Alice, Bob e Carlo (ultime risposte fornite da questo script) 
-  dovrebbero essere rispettivamente 5, 6 e 5 
-
-* eseguire lo script `do-update-albums.sh`
-
-* eseguire di nuovo lo script `run-sample-queries.sh`: 
-  ora le recensioni seguite da Alice, Bob e Carlo dovrebbero essere rispettivamente ancora 5, 6 e 5 
-  (perché i nuovi album non hanno ancora recensioni)
-
-* eseguire lo script `do-update-recensioni.sh`
-
-* eseguire di nuovo lo script `run-sample-queries.sh`: 
-  ora le recensioni seguite da Alice, Bob e Carlo dovrebbero essere rispettivamente 6, 8 e 7 
-
-* eseguire lo script `do-update-connessioni.sh`
-
-* eseguire di nuovo lo script `run-sample-queries.sh`: 
-  ora le recensioni seguite da Alice, Bob e Carlo dovrebbero essere rispettivamente 7, 5 e 8 
-
-
-## Descrizione delle attività da svolgere 
-
-Si veda la descrizione del progetto sul sito web del corso di [Architettura dei sistemi software](https://asw.inf.uniroma3.it/).
-
-
-## Utilizzo di Kafka con Docker e Kubernetes
-
-Ecco alcune [note sull'Utilizzo di Kafka con Docker e Kubernetes](kafka/).
+### Arresto
+Per fermare l'applicazione e rimuovere tutti i container e le reti create:
+```bash
+docker-compose down
+```
