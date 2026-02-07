@@ -25,7 +25,7 @@ Il progetto sfrutta un ecosistema di tecnologie moderne per garantire la natura 
 * **Spring Data JPA**: Utilizzato per l'interazione con le basi di dati attraverso il pattern Repository all'interno degli adattatori di uscita.
 
 ### Infrastruttura & Deployment
-* **Docker** & **Docker Compose**: Utilizzati per la containerizzazione dei singoli servizi e dell'infrastruttura (database e broker Kafka).
+* **Docker** & **Docker Compose**: Utilizzati per la containerizzazione dei singoli servizi e dell'infrastruttura (database e broker Kafka), nonché per la replicazione dei servvizi al fine di garantire la scalabilità del sistema con **Docker Swarm**.
 * **API Gateway**: Punto di ingresso unico (porta 8080) che espone i path dei vari microservizi all'esterno.
 
 
@@ -159,15 +159,40 @@ Prima di avviare i servizi, compilare il progetto con Gradle per generare i file
 ./gradlew clean build
 ```
 
-### Avvio con Docker Compose
-Per avviare l'intera infrastruttura insieme ai microservizi:
+### Avvio del Sistema
+Per facilitare la gestione del ciclo di vita dei container, sono stati predisposti diversi script di automazione. 
+Esistono due modalità principali per avviare l'infrastruttura, a seconda che siano state apportate modifiche al codice o meno:
+* **Primo Avvio o Modifiche al Codice:** Se il codice è stato modificato, è necessario ricompilare il progetto e rigenerare le immagini Docker ignorando la cache:
+
 ```bash
-docker-compose up -d
+./start-all.sh
+```
+* **Avvio Rapido (Cache):** Se l'applicazione è già stata compilata e non ci sono modifiche al codice, è possibile avviare il sistema velocemente utilizzando le immagini esistenti:
+
+```bash
+./start-bettermusic.sh
 ```
 
-Come richiesto dai requisiti di progetto, **è possibile scalare i servizi** mandando in esecuzione più istanze per ciascuno (es. 2 istanze per ognuno):
+Come richiesto dai requisiti di progetto, **è possibile scalare i servizi** mandando in esecuzione più istanze per ciascuno (es. 2 istanze per ognuno) modificando le impostazione del file **docker-compose.yml**:
+
+* **Gestione delle Immagini e Pulizia:** Se desideri pulire l'ambiente host rimuovendo le immagini dei servizi creati (ad esempio per forzare un rebuild pulito da zero), puoi utilizzare:
+
 ```bash
-docker-compose up -d --scale album=2 --scale recensioni=2 --scale connessioni=2 --scale recensioni-seguite=2
+./delete_docker_images.sh
+```
+
+### Arresto del Sistema
+Per fermare l'applicazione, sono disponibili due opzioni a seconda della persistenza dei dati desiderata:
+* **Arresto Standard:** Ferma e rimuove i container, ma mantiene i dati nei volumi:
+
+```bash
+./stop-bettermusic.sh
+```
+
+* **Arresto con Reset Dati:** Ferma i container e rimuove completamente i volumi, cancellando tutti i dati presenti nel database e in Kafka:
+
+```bash
+./stop-bettermusic-volumes.sh
 ```
 
 ### Inizializzazione e Test
@@ -180,9 +205,3 @@ Sono forniti degli script per automatizzare il caricamento dei dati e la verific
 Per un controllo più granulare del sistema, sono disponibili ulteriori script:
 * **Ispezione Dati** $\to$ gli script `do-get-...` (es. `./do-get-albums.sh`) permettono di consultare lo stato locale di ogni servizio.
 * **Monitoraggio Kafka** $\to$ gli script `test_kafka_...` consentono di ispezionare i messaggi in transito sui topic Kafka per verificare la corretta comunicazione asincrona.
-
-### Arresto
-Per fermare l'applicazione e rimuovere tutti i container e le reti create:
-```bash
-docker-compose down
-```
