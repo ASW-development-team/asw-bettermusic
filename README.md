@@ -153,7 +153,7 @@ L'**applicazione** è **progettata per essere eseguita in un ambiente a containe
 Ogni microservizio ed ogni componente dell'infrastruttura (PostgreSQL, Kafka) gira in un container separato.
 
 ### Compilazione
-Prima di avviare i servizi, compilare il progetto con Gradle per generare i file eseguibili:
+Prima di avviare i servizi, compilare il progetto con Gradle per **generare i file eseguibili**:
   
 ```bash
 ./gradlew clean build
@@ -161,35 +161,36 @@ Prima di avviare i servizi, compilare il progetto con Gradle per generare i file
 
 ### Avvio del Sistema
 Per facilitare la gestione del ciclo di vita dei container, sono stati predisposti diversi script di automazione. 
-Esistono due modalità principali per avviare l'infrastruttura, a seconda che siano state apportate modifiche al codice o meno:
-* **Primo Avvio o Modifiche al Codice:** Se il codice è stato modificato, è necessario ricompilare il progetto e rigenerare le immagini Docker ignorando la cache:
+Esistono due modalità principali per avviare l'infrastruttura, a seconda che siano state apportate modifiche al codice o meno.
+
+* **Primo Avvio o Modifiche al Codice**: Se il codice è stato modificato, è necessario ricompilare il progetto e rigenerare le immagini Docker ignorando la cache
 
 ```bash
 ./start-all.sh
 ```
-* **Avvio Rapido (Cache):** Se l'applicazione è già stata compilata e non ci sono modifiche al codice, è possibile avviare il sistema velocemente utilizzando le immagini esistenti:
+* **Avvio Rapido (Cache)**: Se l'applicazione è già stata compilata e non ci sono modifiche al codice, è possibile avviare il sistema velocemente utilizzando le immagini già esistenti
 
 ```bash
 ./start-bettermusic.sh
 ```
 
-Come richiesto dai requisiti di progetto, **è possibile scalare i servizi** mandando in esecuzione più istanze per ciascuno (es. 2 istanze per ognuno) modificando le impostazione del file **docker-compose.yml**:
+Come richiesto dai requisiti di progetto, **è possibile scalare i servizi** mandando in esecuzione più istanze per ciascuno **modificando** le impostazione del file **`docker-compose.yml`**.
 
-* **Gestione delle Immagini e Pulizia:** Se desideri pulire l'ambiente host rimuovendo le immagini dei servizi creati (ad esempio per forzare un rebuild pulito da zero), puoi utilizzare:
+* **Gestione delle Immagini e Pulizia**: Se si desidera pulire l'ambiente host rimuovendo le immagini dei servizi creati (ad esempio per forzare un rebuild pulito da zero)
 
 ```bash
 ./delete_docker_images.sh
 ```
 
 ### Arresto del Sistema
-Per fermare l'applicazione, sono disponibili due opzioni a seconda della persistenza dei dati desiderata:
-* **Arresto Standard:** Ferma e rimuove i container, ma mantiene i dati nei volumi:
+Per fermare l'applicazione, sono disponibili due opzioni a seconda della persistenza dei dati desiderata.
+* **Arresto Standard**: Ferma e rimuove i container, ma mantiene i dati nei volumi
 
 ```bash
 ./stop-bettermusic.sh
 ```
 
-* **Arresto con Reset Dati:** Ferma i container e rimuove completamente i volumi, cancellando tutti i dati presenti nel database e in Kafka:
+* **Arresto con Reset Dati**: Ferma i container e rimuove completamente i volumi, cancellando tutti i dati presenti nel database e in Kafka
 
 ```bash
 ./stop-bettermusic-volumes.sh
