@@ -206,3 +206,7 @@ Sono forniti degli script per automatizzare il caricamento dei dati e la verific
 Per un controllo più granulare del sistema, sono disponibili ulteriori script:
 * **Ispezione Dati** $\to$ gli script `do-get-...` (es. `./do-get-albums.sh`) permettono di consultare lo stato locale di ogni servizio.
 * **Monitoraggio Kafka** $\to$ gli script `test_kafka_...` consentono di ispezionare i messaggi in transito sui topic Kafka per verificare la corretta comunicazione asincrona.
+
+## Autori
+
+Alessandro Cavina, Francesco Giovanardi, Leonardo Crozzoli, Tommaso Gioia, Irene Proietti Cesarini
